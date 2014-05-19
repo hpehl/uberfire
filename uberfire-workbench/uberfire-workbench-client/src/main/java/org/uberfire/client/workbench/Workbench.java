@@ -15,7 +15,7 @@
  */
 package org.uberfire.client.workbench;
 
-import static com.google.gwt.dom.client.Style.Unit.PCT;
+import static com.google.gwt.dom.client.Style.Unit.PX;
 import static java.util.Collections.sort;
 import static org.uberfire.workbench.model.PanelType.ROOT_STATIC;
 
@@ -116,7 +116,7 @@ extends Composite
     @Inject
     private Event<ApplicationReadyEvent> appReady;
 
-    private final DockLayoutPanel container = new DockLayoutPanel(PCT);
+    private final DockLayoutPanel container = new DockLayoutPanel(PX);
 
     private boolean isStandaloneMode = false;
     private final Set<String> headersToKeep = new HashSet<String>();
