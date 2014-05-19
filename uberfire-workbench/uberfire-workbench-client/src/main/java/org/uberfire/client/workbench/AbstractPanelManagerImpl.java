@@ -4,12 +4,13 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
 import com.google.gwt.user.client.ui.IsWidget;
-import com.google.gwt.user.client.ui.SimplePanel;
+import com.google.gwt.user.client.ui.LayoutPanel;
 import org.jboss.errai.ioc.client.container.IOCBeanDef;
 import org.jboss.errai.ioc.client.container.SyncBeanManager;
 import org.uberfire.client.mvp.PerspectiveActivity;
@@ -79,9 +80,9 @@ public abstract class AbstractPanelManagerImpl implements PanelManager  {
         final PanelDefinition newRoot = perspective.getRoot();
 
         final WorkbenchPanelPresenter oldPresenter = mapPanelDefinitionToPresenter.remove( root );
-        SimplePanel container;
+        LayoutPanel container;
         if ( oldPresenter != null && oldPresenter.getPanelView().asWidget().getParent() != null ) {
-            container = (SimplePanel) oldPresenter.getPanelView().asWidget().getParent();
+            container = (LayoutPanel) oldPresenter.getPanelView().asWidget().getParent();
         } else {
             container = null;
         }
@@ -96,10 +97,8 @@ public abstract class AbstractPanelManagerImpl implements PanelManager  {
             mapPanelDefinitionToPresenter.put( newRoot, newPresenter );
         }
         if ( container != null ) {
-            if ( oldPresenter != null ) {
-                oldPresenter.removePanel();
-            }
-            container.setWidget( newPresenter.getPanelView() );
+            oldPresenter.removePanel();
+            container.add(newPresenter.getPanelView());
         }
     }
 

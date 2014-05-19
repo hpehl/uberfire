@@ -21,6 +21,7 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
 
+import com.google.gwt.user.client.ui.LayoutPanel;
 import com.google.gwt.user.client.ui.RootLayoutPanel;
 import com.google.gwt.user.client.ui.SimplePanel;
 
@@ -52,7 +53,7 @@ public class WorkbenchEntryPoint {
 
     private SessionInfo sessionInfo = null;
 
-    private final SimplePanel appWidget = new SimplePanel();
+    private final LayoutPanel appWidget = new LayoutPanel();
 
     @PostConstruct
     public void init() {

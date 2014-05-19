@@ -15,8 +15,9 @@
  */
 package org.uberfire.client.workbench;
 
-import static java.util.Collections.*;
-import static org.uberfire.workbench.model.PanelType.*;
+import static com.google.gwt.dom.client.Style.Unit.PCT;
+import static java.util.Collections.sort;
+import static org.uberfire.workbench.model.PanelType.ROOT_STATIC;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,6 +32,15 @@ import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
 
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.user.client.Command;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.Window.ClosingEvent;
+import com.google.gwt.user.client.Window.ClosingHandler;
+import com.google.gwt.user.client.ui.Composite;
+import com.google.gwt.user.client.ui.DockLayoutPanel;
+import com.google.gwt.user.client.ui.FlowPanel;
+import com.google.gwt.user.client.ui.LayoutPanel;
 import org.jboss.errai.ioc.client.api.AfterInitialization;
 import org.jboss.errai.ioc.client.api.EntryPoint;
 import org.jboss.errai.ioc.client.container.IOCBeanDef;
@@ -40,29 +50,12 @@ import org.uberfire.client.mvp.PerspectiveActivity;
 import org.uberfire.client.mvp.PlaceManager;
 import org.uberfire.client.workbench.events.ApplicationReadyEvent;
 import org.uberfire.client.workbench.widgets.dnd.WorkbenchDragAndDropManager;
-import org.uberfire.client.workbench.widgets.dnd.WorkbenchPickupDragController;
 import org.uberfire.mvp.ParameterizedCommand;
 import org.uberfire.mvp.impl.DefaultPlaceRequest;
 import org.uberfire.mvp.impl.PathPlaceRequest;
 import org.uberfire.workbench.model.PanelDefinition;
 import org.uberfire.workbench.model.PerspectiveDefinition;
 import org.uberfire.workbench.model.impl.PanelDefinitionImpl;
-
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.Scheduler;
-import com.google.gwt.core.client.Scheduler.ScheduledCommand;
-import com.google.gwt.event.logical.shared.ResizeEvent;
-import com.google.gwt.event.logical.shared.ResizeHandler;
-import com.google.gwt.user.client.Command;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.Window.ClosingEvent;
-import com.google.gwt.user.client.Window.ClosingHandler;
-import com.google.gwt.user.client.ui.AbsolutePanel;
-import com.google.gwt.user.client.ui.Composite;
-import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.RequiresResize;
-import com.google.gwt.user.client.ui.SimplePanel;
-import com.google.gwt.user.client.ui.Widget;
 
 /**
  * Responsible for bootstrapping the client-side Workbench user interface. Normally this happens automatically with no
@@ -109,7 +102,8 @@ import com.google.gwt.user.client.ui.Widget;
 @ApplicationScoped
 public class Workbench
 extends Composite
-implements RequiresResize {
+//implements RequiresResize
+{
 
     /**
      * List of classes who want to do stuff (often server communication) before the workbench shows up.
@@ -122,18 +116,14 @@ implements RequiresResize {
     @Inject
     private Event<ApplicationReadyEvent> appReady;
 
-    private final FlowPanel container = new FlowPanel();
-
-    private FlowPanel headers;
-
-    private FlowPanel footers;
+    private final DockLayoutPanel container = new DockLayoutPanel(PCT);
 
     private boolean isStandaloneMode = false;
     private final Set<String> headersToKeep = new HashSet<String>();
 
-    private final SimplePanel workbench = new SimplePanel();
+    private final LayoutPanel workbench = new LayoutPanel();
 
-    private AbsolutePanel workbenchContainer;
+//    private AbsolutePanel workbenchContainer;
 
     @Inject
     private PanelManager panelManager;
@@ -147,8 +137,8 @@ implements RequiresResize {
     @Inject
     private PlaceManager placeManager;
 
-    @Inject
-    private WorkbenchPickupDragController dragController;
+//    @Inject
+//    private WorkbenchPickupDragController dragController;
 
     @Inject
     private WorkbenchServicesProxy wbServices;
@@ -269,21 +259,23 @@ implements RequiresResize {
         System.out.println("Workbench starting...");
         appReady.fire( new ApplicationReadyEvent() );
 
-        headers = setupMarginWidgets( Header.class );
-        footers = setupMarginWidgets( Footer.class );
+        FlowPanel headers = setupMarginWidgets(Header.class);
+        FlowPanel footers = setupMarginWidgets(Footer.class);
 
         if ( !isStandaloneMode ) {
-            container.add( headers );
+            container.addNorth(headers, 50); // TODO replace fix height
+        }
+        if ( !isStandaloneMode ) {
+            container.addSouth(footers, 0); // TODO replace fix height
         }
 
         //Container panels for workbench
-        workbenchContainer = dragController.getBoundaryPanel();
-        workbenchContainer.add( workbench );
-        container.add( workbenchContainer );
+        // Bypass DND stuff
+        //        workbenchContainer = dragController.getBoundaryPanel();
+        //        workbenchContainer.add( workbench );
+        //        container.add( workbenchContainer );
+        container.add(workbench);
 
-        if ( !isStandaloneMode ) {
-            container.add( footers );
-        }
 
         //Clear environment
         workbench.clear();
@@ -292,20 +284,20 @@ implements RequiresResize {
         //Add default workbench widget
         final PanelDefinition root = new PanelDefinitionImpl( ROOT_STATIC );
         panelManager.setRoot( root );
-        workbench.setWidget( panelManager.getPanelView( root ) );
+        workbench.add( panelManager.getPanelView( root ) );
 
         //Size environment - Defer so Widgets have been rendered and hence sizes available
-        Scheduler.get().scheduleDeferred( new ScheduledCommand() {
-
-            @Override
-            public void execute() {
-                final int width = Window.getClientWidth();
-                final int height = Window.getClientHeight();
-                doResizeWorkbenchContainer( width,
-                        height );
-            }
-
-        } );
+//        Scheduler.get().scheduleDeferred( new ScheduledCommand() {
+//
+//            @Override
+//            public void execute() {
+//                final int width = Window.getClientWidth();
+//                final int height = Window.getClientHeight();
+//                doResizeWorkbenchContainer( width,
+//                        height );
+//            }
+//
+//        } );
 
         //Lookup PerspectiveProviders and if present launch it to set-up the Workbench
         if ( !isStandaloneMode ) {
@@ -328,20 +320,20 @@ implements RequiresResize {
         } );
 
         //Resizing the Window should resize everything
-        Window.addResizeHandler( new ResizeHandler() {
-            @Override
-            public void onResize( ResizeEvent event ) {
-                doResizeWorkbenchContainer( event.getWidth(),
-                        event.getHeight() );
-            }
-        } );
+//        Window.addResizeHandler( new ResizeHandler() {
+//            @Override
+//            public void onResize( ResizeEvent event ) {
+//                doResizeWorkbenchContainer( event.getWidth(),
+//                        event.getHeight() );
+//            }
+//        } );
 
-        Scheduler.get().scheduleDeferred( new Scheduler.ScheduledCommand() {
-            @Override
-            public void execute() {
-                onResize();
-            }
-        } );
+//        Scheduler.get().scheduleDeferred( new Scheduler.ScheduledCommand() {
+//            @Override
+//            public void execute() {
+//                onResize();
+//            }
+//        } );
     }
 
     private void handleStandaloneMode( final Map<String, List<String>> parameters ) {
@@ -377,32 +369,32 @@ implements RequiresResize {
         return defaultPerspective;
     }
 
-    @Override
-    public void onResize() {
-        final int width = Window.getClientWidth();
-        final int height = Window.getClientHeight();
-        doResizeWorkbenchContainer( width, height );
-    }
+//    @Override
+//    public void onResize() {
+//        final int width = Window.getClientWidth();
+//        final int height = Window.getClientHeight();
+//        doResizeWorkbenchContainer( width, height );
+//    }
 
-    private void doResizeWorkbenchContainer( final int width,
-                                             final int height ) {
-        final int headersHeight = headers.asWidget().getOffsetHeight();
-        final int footersHeight = footers.asWidget().getOffsetHeight();
-        final int availableHeight;
-        if ( !isStandaloneMode ) {
-            availableHeight = height - headersHeight - footersHeight;
-        } else {
-            availableHeight = height;
-        }
-
-        workbenchContainer.setPixelSize( width, availableHeight );
-        workbench.setPixelSize( width, availableHeight );
-
-        final Widget w = workbench.getWidget();
-        if ( w != null ) {
-            if ( w instanceof RequiresResize ) {
-                ( (RequiresResize) w ).onResize();
-            }
-        }
-    }
+//    private void doResizeWorkbenchContainer( final int width,
+//                                             final int height ) {
+//        final int headersHeight = headers.asWidget().getOffsetHeight();
+//        final int footersHeight = footers.asWidget().getOffsetHeight();
+//        final int availableHeight;
+//        if ( !isStandaloneMode ) {
+//            availableHeight = height - headersHeight - footersHeight;
+//        } else {
+//            availableHeight = height;
+//        }
+//
+//        workbenchContainer.setPixelSize( width, availableHeight );
+//        workbench.setPixelSize( width, availableHeight );
+//
+//        final Widget w = workbench.getWidget();
+//        if ( w != null ) {
+//            if ( w instanceof RequiresResize ) {
+//                ( (RequiresResize) w ).onResize();
+//            }
+//        }
+//    }
 }
